@@ -23,7 +23,6 @@ module LogStash::Util
     else; RbConfig::CONFIG["host_os"]
   end
 
-  HOST_CPU = RbConfig::CONFIG["host_cpu"]
   PR_SET_NAME = 15
   def self.set_thread_name(name)
     previous_name = Java::java.lang.Thread.currentThread.getName() if block_given?
@@ -33,15 +32,10 @@ module LogStash::Util
     Thread.current[:name] = name
 
     if UNAME == "linux"
-      # Avoid using prctl on aarch64. The ffi loading is problematic
-      if HOST_CPU == 'aarch64'
-        Process.setproctitle(name)
-      else
-        require "logstash/util/prctl"
-        # prctl PR_SET_NAME allows up to 16 bytes for a process name
-        # since MRI 1.9, JRuby, and Rubinius use system threads for this.
-        LibC.prctl(PR_SET_NAME, name[0..16], 0, 0, 0)
-        end
+      require "logstash/util/prctl"
+      # prctl PR_SET_NAME allows up to 16 bytes for a process name
+      # since MRI 1.9, JRuby, and Rubinius use system threads for this.
+      LibC.prctl(PR_SET_NAME, name[0..16], 0, 0, 0)
     end
 
     if block_given?
