@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -x
 current_dir="$(dirname "$0")"
 
 export _JAVA_OPTIONS="-Djava.net.preferIPv4Stack=true"
@@ -22,7 +22,7 @@ setup_kafka() {
     local version=$1
     if [ ! -d $KAFKA_HOME ]; then
         echo "Downloading Kafka version $version"
-        curl -s -o $INSTALL_DIR/kafka.tgz "https://mirrors.ocf.berkeley.edu/apache/kafka/$version/kafka_2.11-$version.tgz"
+        curl -o $INSTALL_DIR/kafka.tgz "https://mirrors.ocf.berkeley.edu/apache/kafka/$version/kafka_2.11-$version.tgz"
         mkdir $KAFKA_HOME && tar xzf $INSTALL_DIR/kafka.tgz -C $KAFKA_HOME --strip-components 1
         rm $INSTALL_DIR/kafka.tgz
     fi
@@ -32,10 +32,13 @@ start_kafka() {
     echo "Starting ZooKeeper"
     $KAFKA_HOME/bin/zookeeper-server-start.sh -daemon $KAFKA_HOME/config/zookeeper.properties
     wait_for_port 2181
-    echo "Starting Kafka broker"
+    java -version
     rm -rf ${KAFKA_LOGS_DIR}
+    
     mkdir -p ${KAFKA_LOGS_DIR}
-    $KAFKA_HOME/bin/kafka-server-start.sh -daemon $KAFKA_HOME/config/server.properties --override delete.topic.enable=true --override advertised.host.name=127.0.0.1 --override log.dir=${KAFKA_LOGS_DIR} --override log.flush.interval.ms=200
+    ls $KAFKA_HOME/bin
+    JAVA_HOME= $KAFKA_HOME/bin/kafka-server-start.sh $KAFKA_HOME/config/server.properties --override delete.topic.enable=true --override advertised.host.name=127.0.0.1 --override log.dir=${KAFKA_LOGS_DIR} --override log.flush.interval.ms=200
+    ls ${KAFKA_LOGS_DIR}
     wait_for_port 9092
 }
 
